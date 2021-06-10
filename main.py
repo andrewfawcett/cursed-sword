@@ -3,11 +3,54 @@ import curses
 # https://gist.github.com/claymcleod/b670285f334acd56ad1c
 
 ENTER = 10
-
+ESCAPE = 27
 
 def main():
     curses.wrapper(draw_title)
     curses.wrapper(draw_map)
+
+def draw_menu(stdscr):
+    menu_window = curses.newwin(10, 10, 0, 70)
+    
+    menu = ['Battle', 'Item', 'Save', 'Quit']
+    option = 0
+
+    k = 0
+    while (k != ENTER):
+        menu_window.clear()
+        menu_window.border()
+        # Dynamically draw menu items
+        for num, item in enumerate(menu, start=1):
+                        menu_window.addstr(num, 2, item)
+        
+        # Move cursor
+        if k == curses.KEY_DOWN:
+            option = option + 1
+        elif k == curses.KEY_UP:
+            option = option - 1
+        option = option % len(menu)
+
+        menu_window.addch(option + 1, 1, '>')
+        
+        # Draw window and get key
+        menu_window.refresh()
+        k = stdscr.getch()
+    
+    if option == 0:
+        battle(stdscr)
+    elif option == 3:
+        return False
+
+
+def battle(stdscr):
+    battle_window = curses.newwin(24, 48)
+    
+    k = 0
+    while (k != ESCAPE):
+        battle_window.clear()
+        battle_window.border()
+        battle_window.refresh()
+        k = stdscr.getch()
 
 def draw_map(stdscr):
         stdscr.clear()
@@ -23,39 +66,39 @@ def draw_map(stdscr):
         curses.noecho()
         curses.cbreak()
         stdscr.keypad(True)
+        curses.curs_set(0) # Disable cursor
 
         stdscr.clear()
         stdscr.refresh()
-
-        option = 0
-        menu = ['Battle', 'Item', 'Save', 'Quit']
+        
         PLAY=True
         while (PLAY):
-            while (k != ENTER):
-                stdscr.clear()
-                height, width = stdscr.getmaxyx()
+            stdscr.clear()
+            stdscr.border()
+            height, width = stdscr.getmaxyx()
 
-                if k == curses.KEY_DOWN:
-                    option = option + 1
-                elif k == curses.KEY_UP:
-                    option = option - 1
+            if k == curses.KEY_DOWN:
+                cursor_y = cursor_y + 1
+            elif k == curses.KEY_UP:
+                cursor_y = cursor_y - 1
+            elif k == curses.KEY_RIGHT:
+                cursor_x = cursor_x + 1
+            elif k == curses.KEY_LEFT:
+                cursor_x = cursor_x - 1
+            elif k == ENTER:
+                PLAY == draw_menu(stdscr)
+            
+            if ((cursor_y + cursor_x) % 2 == 0):
+                charcter = '<>'
+            else:
+                charcter = '><'
+            stdscr.addstr(cursor_y, cursor_x, charcter)
 
-                option = option % len(menu)
 
-                for num, item in enumerate(menu, start=0):
-                    stdscr.addstr(num, 1, item)
-                # stdscr.addstr(0, len(statusbar), " " * (width - len(statusbar) - 1))
-                
-
-                console = f'Key: {k} | Option: {option}'[:width-1]
-                stdscr.addstr(height-1, 0, console)
-
-                stdscr.move(option, 0)
-
-                stdscr.refresh()
-                k = stdscr.getch()
-            if option == 3:
-                PLAY = False
+            #DEBUG
+            # stdscr.addstr(80, 0, str(PLAY))
+            stdscr.refresh()
+            k = stdscr.getch()
 
 
     
@@ -72,7 +115,7 @@ def draw_title(stdscr):
     stdscr.clear()
     stdscr.refresh()
 
-    while (k != ord('q')):
+    while (k != ENTER):
         stdscr.clear()
         height, width = stdscr.getmaxyx()
 
